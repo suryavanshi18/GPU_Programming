@@ -1,0 +1,53 @@
+#include <iostream>
+#include <cuda_runtime.h>
+
+__global__ void addArray(int* a,int* b,int* c){
+    int i=threadIdx.x;
+    c[i]=a[i]+b[i];
+    return;
+}
+
+int main() {
+    int a[]={1,2,3,4};
+    int b[]={8,9,10,11};
+
+    int c[sizeof(a)/sizeof(int)] ={0};
+
+
+    //Create pointers into GPU
+
+    int* cudaA=0;
+    int* cudaB=0;
+    int* cudaC=0;
+
+    //allocate memory in gpu
+
+    cudaMalloc(&cudaA,sizeof(a));
+    cudaMalloc(&cudaB,sizeof(b));
+    cudaMalloc(&cudaC,sizeof(c));
+
+
+    // copy the vectors to gpu
+    //destination to source
+    cudaMemcpy(cudaA,a,sizeof(a),cudaMemcpyHostToDevice);
+    cudaMemcpy(cudaB,b,sizeof(b),cudaMemcpyHostToDevice);
+
+
+    //HOST is CPU DEVICE is GPU
+    // GRID SIZE , Block Size
+    addArray<<<1,sizeof(c)/sizeof(int)>>> (cudaA,cudaB,cudaC);
+
+    cudaMemcpy(c,cudaC,sizeof(c),cudaMemcpyDeviceToHost);
+
+
+    cudaFree(cudaA);
+    cudaFree(cudaB);
+    cudaFree(cudaC);
+
+    for(int x:c){
+        std::cout<<x<<" ";
+    }
+    return 0;
+
+}
+
