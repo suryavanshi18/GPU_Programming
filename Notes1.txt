@@ -1,0 +1,49 @@
+Threads are defined by special functions called kernels
+Kernel runs on GPU.
+Kernel is executed as a set of threads
+Each thread is mapped to single CUDA core on GPU
+
+Host-> CPU
+Device-> GPU
+
+Heterogenous-> Takes advantage of serial execution of CPU and Parallelism of GPU
+CUDA is C with extension
+Host and Device talk to each other via PCI express Bus
+
+CUDA Threads execute in Single Instruction Multiple Threads(SIMT)
+Each thread performs the same operation on a subset of data. Threads execute independently
+Threads do not execute at the same rate
+
+Sets of threads are grouped in block
+Blocks get mapped onto corresponding set of CUDA cores
+
+Grids are collection of blocks
+Each kernel launch creates a single grid
+dim3 is a CUDA datastucture
+
+dim3 grid_size(1,1,1);
+dim3 block_size(1,1,1);
+
+kernalName<<<grid_size,block_size>>>(...);
+
+
+Allocate memory
+copy memory from host to device
+cope memory from device to host
+freeMemory on device
+print on host
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

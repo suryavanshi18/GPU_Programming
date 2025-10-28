@@ -1,0 +1,195 @@
+Each thread has its own thread index accessible via threadIdx variable
+Thread and blocks can have 3 index
+	threadIdx.x  blockIdx.x
+	threadIdx.y  blockIdx.y
+	threadIdx.z  blockIdx.z
+
+
+
+dim3 grid_size(1) //1*1*1
+dim3 block_size(n) //n*1*1
+
+Grid and Block can have dimension
+
+	gridDim.x blockDim.x
+	gridDim.y blockDim.y
+	gridDim.z blockDim.z
+	
+To determin unique gird index of a thread
+
+i=threadIdx.x+blockIdx.x*blockDim.x
+
+
+__global__ void testKernel (int *a){
+    int i=threadIdx.x+blockIdx.x*blockDim.x;
+    a[i]=blockDim.x; //4 4 4 4 4 4 4 4 4 4 4 4
+    // a[i]=blockIdx.x; //0 0 0 0 1 1 1 1 2 2 2 2 
+    // a[i]=threadIdx.x; //0 1 2 3 0 1 2 3 0 1 2 3 
+    //a[i]=i;  //0 1 2 3 4 5 6 7 8 9 10 11
+}
+
+    int* a;
+    int arr[12]={0};
+    cudaMalloc(&a,sizeof(arr));
+
+    testKernel<<<3,4>>>(a); //Total 12 threads will be executed
+    cudaMemcpy(arr,a,sizeof(arr),cudaMemcpyDeviceToHost);
+    cudaFree(a);
+    for(int x:arr){
+        std::cout<<x<<" ";
+    }
+    return 0;
+
+In above code it has 3 blocks and each block has 4 threads
+Hence blockDim is 4
+blockId varies from 0 1 2
+threadId varies from 0 1 2 3
+
+Threads -> local memory and registers
+Blocks  -> Shared memory
+Grid    -> Global memory (entire program in the host code)
+
+
+speed of memory spaces
+
+registers>shared>local>global
+
+Shared memory allows threads within a block to communicate with each other
+
+
+Registers & local memory
+	Variables declared within a kernel
+Shared Memory
+	Allows threads within a block to communicate
+
+Constant
+	Used for unchanging data through kernel
+Global Memory
+	Stores data copied to and from host
+
+A barrier is a point in the kernel where all threads stop and wait on others
+When all threads have reached the barrier they can be proceed.
+That can be implemented by
+__syncthreads()
+
+
+
+
+################################ Vector Addition ############################3
+
+__global__ void addArray(int* a,int* b,int* c,int n){
+    int i=threadIdx.x+blockIdx.x*blockDim.x;
+    if(i<n){
+        c[i]=a[i]+b[i];
+    }
+    return;
+}
+int main()
+{
+    int a[]={1,2,3,4};
+    int b[]={7,8,9,10};
+
+    int c[4]={0};
+
+    int *cudaA;
+    int *cudaB;
+    int *cudaC;
+    cudaMalloc(&cudaA,sizeof(a));
+    cudaMalloc(&cudaB,sizeof(b));
+    cudaMalloc(&cudaC,sizeof(c));
+
+    cudaMemcpy(cudaA,a,sizeof(a),cudaMemcpyHostToDevice);
+    cudaMemcpy(cudaB,b,sizeof(b),cudaMemcpyHostToDevice);
+
+    addArray<<<1,4>>>(cudaA,cudaB,cudaC,4);
+
+    cudaMemcpy(c,cudaC,sizeof(c),cudaMemcpyDeviceToHost);
+    cudaFree(cudaA);
+    cudaFree(cudaB);
+    cudaFree(cudaC);
+
+
+    for(int x:c){
+        std::cout<<x<<" ";
+    }
+
+
+    return 0;
+
+}
+
+
+############################# Matrix Addition ##########################33
+
+__global__ void matrixAdd(int* a,int* b,int* c,int rows,int cols){
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if(i < rows && j < cols){
+        //keep i and j within bounds
+        int idx = i * cols + j;
+        //CUDA uses linear memory, so 2D matrices are stored as contiguous 1D arrays in row-major order.
+        c[idx] = a[idx] + b[idx];
+    }
+}
+
+int main(){
+    int a[3][2]={{1,2},{3,4},{5,6}};
+    int b[3][2]={{5,6},{7,8},{9,10}};
+
+    int c[3][2];
+
+    int *cudaA;
+    int *cudaB;
+    int *cudaC;
+
+    cudaMalloc(&cudaA,sizeof(a));
+    cudaMalloc(&cudaB,sizeof(b));
+    cudaMalloc(&cudaC,sizeof(c));
+
+    cudaMemcpy(cudaA,a,sizeof(a),cudaMemcpyHostToDevice);
+    cudaMemcpy(cudaB,b,sizeof(b),cudaMemcpyHostToDevice);
+    dim3 threadsPerBlock(3, 2);
+    int rows=3;
+    int cols=2;
+    matrixAdd<<< 1,threadsPerBlock>>>(cudaA,cudaB,cudaC,rows,cols);
+    cudaMemcpy(c,cudaC,sizeof(c),cudaMemcpyDeviceToHost);
+    cudaFree(cudaA);
+    cudaFree(cudaB);
+    cudaFree(cudaC);
+    for(int i=0;i<rows;i++){
+        for(int j=0;j<cols;j++){
+            std::cout<<c[i][j]<<" ";
+        }
+        std::cout<<"\n";
+    }    
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
